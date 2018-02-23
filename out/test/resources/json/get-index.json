@@ -1,0 +1,35 @@
+{
+  "test_index": {
+    "aliases": {
+      "alias1": {},
+      "alias2": {}
+    },
+    "mappings": {
+      "test_type": {
+        "properties": {
+          "name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
+          }
+        }
+      }
+    },
+    "settings": {
+      "index": {
+        "creation_date": "1510316866502",
+        "number_of_shards": "5",
+        "number_of_replicas": "1",
+        "uuid": "Yc4RstHSRJenDArbp-kQ3A",
+        "version": {
+          "created": "6000052"
+        },
+        "provided_name": "test_index"
+      }
+    }
+  }
+}

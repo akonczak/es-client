@@ -1,0 +1,30 @@
+{
+  "twitter" : {
+    "settings" : {
+      "index" : {
+        "creation_date" : "1514911636419",
+        "number_of_shards" : "3",
+        "number_of_replicas" : "2",
+        "uuid" : "paaGZM_cSVKif5_vlRC8bw",
+        "version" : {
+          "created" : "6000099"
+        },
+        "provided_name" : "twitter"
+      }
+    }
+  },
+  ".kibana" : {
+    "settings" : {
+      "index" : {
+        "creation_date" : "1511792652838",
+        "number_of_shards" : "1",
+        "number_of_replicas" : "1",
+        "uuid" : "CmJAEUXlSV-LLunpxqq7KQ",
+        "version" : {
+          "created" : "6000099"
+        },
+        "provided_name" : ".kibana"
+      }
+    }
+  }
+}

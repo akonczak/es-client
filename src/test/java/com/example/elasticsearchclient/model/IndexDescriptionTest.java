@@ -1,132 +1,96 @@
 package com.example.elasticsearchclient.model;
 
+import com.example.elasticsearchclient.model.index.Index;
+import com.example.elasticsearchclient.model.index.IndexAlreadyExistsException;
 import com.example.elasticsearchclient.model.index.IndexDescription;
 import com.example.elasticsearchclient.model.index.Settings;
+import com.example.elasticsearchclient.service.IndexServiceImpl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.util.FileCopyUtils;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.io.InputStreamReader;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
 
 public class IndexDescriptionTest {
 
-    private final String json="{\n" +
-            "  \"test_index\": {\n" +
-            "    \"aliases\": [\"aaaaaa\"],\n" +
-            "    \"mappings\": {\n" +
-            "      \"test_type\": {\n" +
-            "        \"properties\": {\n" +
-            "          \"name\": {\n" +
-            "            \"type\": \"text\",\n" +
-            "            \"fields\": {\n" +
-            "              \"keyword\": {\n" +
-            "                \"type\": \"keyword\",\n" +
-            "                \"ignore_above\": 256\n" +
-            "              }\n" +
-            "            }\n" +
-            "          }\n" +
-            "        }\n" +
-            "      }\n" +
-            "    },\n" +
-            "    \"settings\": {\n" +
-            "      \"index\": {\n" +
-            "        \"creation_date\": \"1510316866502\",\n" +
-            "        \"number_of_shards\": \"5\",\n" +
-            "        \"number_of_replicas\": \"1\",\n" +
-            "        \"uuid\": \"Yc4RstHSRJenDArbp-kQ3A\",\n" +
-            "        \"version\": {\n" +
-            "          \"created\": \"6000052\"\n" +
-            "        },\n" +
-            "        \"provided_name\": \"test_index\"\n" +
-            "      }\n" +
-            "    }\n" +
-            "  }\n" +
-            "}";
+    private String readJsonFile(String filePath) throws IOException {
+        try (InputStreamReader in = new InputStreamReader(getClass().getClassLoader().getResourceAsStream(filePath))) {
+            return FileCopyUtils.copyToString(in);
+        }
+    }
+
+    private ObjectMapper mapper = new ObjectMapper();
+
+    @Test
+    public void shouldMapIndexDescription() throws IOException {
+        String json = readJsonFile("json/get-index.json");
+        Map<String, IndexDescription> map = mapper.readValue(json, new TypeReference<Map<String, IndexDescription>>() {
+        });
+        System.out.println(map);
+        assertThat(map.size(), is(1));
+        IndexDescription testIndex = map.get("test_index");
+        assertThat(testIndex.getAliases().keySet(), hasItems("alias1"));
+        assertThat(testIndex.getAliases().keySet(), hasItems("alias2"));
+        assertThat(testIndex.getMappings().get("test_type"), is(notNullValue()));
+        assertThat(testIndex.getSettings(), is(notNullValue()));
+    }
 
 
     @Test
-    public void test() throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-
-        //Map<String, Object> map = new HashMap<String, Object>();
-
-
-        Map<String, IndexDescription> map = mapper.readValue(json, new TypeReference<Map<String, IndexDescription>>(){});
-        //IndexDescription map = mapper.readValue(json, new TypeReference<IndexDescription>(){});
+    public void mapSettings() throws IOException {
+        String settings = readJsonFile("json/get-settings.json");
+        Map<String, Map<String,Settings>> map = mapper.readValue(settings, new TypeReference<Map<String, Map<String,Settings>>>() {
+        });
         System.out.println(map);
+        assertThat(map.size(), is(2));
+        Index twitter = map.get("twitter").get("settings").getIndex();
+        assertThat(twitter.getProvided_name(), is("twitter"));
+        Index kibana = map.get(".kibana").get("settings").getIndex();
+        assertThat(kibana.getProvided_name(), is(".kibana"));
 
     }
 
     @Test
-    public void rest() throws IOException {
+    public void rest() throws ResourceException {
 
         String test_index = "test_index";
-        if(indexService.isIndexExists(test_index)) {
+        if (indexService.isIndexExists(test_index)) {
             System.out.println(indexService.getIndex(test_index));
         }
 
         String test_index_v1 = "test_index_v1";
-        if(!indexService.isIndexExists(test_index_v1)) {
+        if (!indexService.isIndexExists(test_index_v1)) {
             System.out.println(indexService.createIndex(test_index_v1, new Settings()));
         }
         String test_index_v2 = "test_index_v2";
-        if(!indexService.isIndexExists(test_index_v2)) {
+        if (!indexService.isIndexExists(test_index_v2)) {
             System.out.println(indexService.createIndex(test_index_v2, new Settings()));
         }
 
+
+        System.out.println(indexService.getIndex(test_index_v1));
+        System.out.println(indexService.getSettings(test_index_v1, test_index_v2));
+
+        //System.out.println(indexService.close(test_index_v1));
+        //System.out.println(indexService.open(test_index_v1));
+        //System.out.println(indexService.open(test_index_v1));
+
+
+        //System.out.println(indexService.delete(test_index));
+        //System.out.println(indexService.delete(test_index_v1));
+        //System.out.println(indexService.delete(test_index_v2));
+
+
     }
 
-    private IndexService indexService = new IndexService();
-
-    class IndexService {
-
-        RestTemplate restTemplate = new RestTemplate();
-
-
-        private String getIndexPath(String name){
-            return String.format("http://localhost:9202/%s", name);
-        }
-
-        public boolean isIndexExists(String name){
-            try {
-                return restTemplate.exchange(getIndexPath(name), HttpMethod.HEAD, null, String.class).getStatusCode().is2xxSuccessful();
-            }catch (HttpClientErrorException e){
-                return false;
-            }
-        }
-
-        public Map<String,Object> createIndex(String name, Settings settings){
-
-            ParameterizedTypeReference<Map<String, Object>> type = new ParameterizedTypeReference<Map<String, Object>>(){};
-            HashMap<String, Settings> kvHashMap = new HashMap<>();
-            kvHashMap.put("settings", settings);
-            HttpEntity body = new HttpEntity(kvHashMap);
-            ParameterizedTypeReference<String> typeAsString = new ParameterizedTypeReference<String>(){};
-            ResponseEntity<Map<String, Object>> exchange = restTemplate.exchange(getIndexPath(name), HttpMethod.PUT, body, type);
-            if(!exchange.getStatusCode().is2xxSuccessful()){
-                System.out.println(exchange.toString());
-            }
-            return exchange.getStatusCode().is2xxSuccessful() ? exchange.getBody():null;
-        }
-
-        public IndexDescription getIndex(String name){
-            ParameterizedTypeReference<Map<String, IndexDescription>> type = new ParameterizedTypeReference<Map<String, IndexDescription>>(){};
-
-
-            System.out.println(String.format("Quering %s", getIndexPath(name)));
-            ResponseEntity<Map<String, IndexDescription>> exchange = restTemplate.exchange(getIndexPath(name), HttpMethod.GET, null, type);
-            return exchange.getStatusCode().is2xxSuccessful() ? exchange.getBody().get(name):null;
-        }
-    }
+    private IndexServiceImpl indexService = new IndexServiceImpl();
 
 }

@@ -6,8 +6,6 @@ import lombok.*;
 
 import java.util.Map;
 
-@Setter
-@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -15,6 +13,14 @@ import java.util.Map;
 public class Settings {
 
     private Index index;
+
+    public Index getIndex() {
+        return index;
+    }
+
+    public void setIndex(Index index) {
+        this.index = index;
+    }
 
     @Override
     public String toString() {
@@ -24,28 +30,3 @@ public class Settings {
     }
 }
 
-@Setter
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-class Index {
-    private String creation_date;
-    private String number_of_shards;
-    private String number_of_replicas;
-    private String uuid;
-    private String provided_name;
-    private Map<String,Object> version;
-
-    @Override
-    public String toString() {
-        return "Index{" +
-                "creation_date='" + creation_date + '\'' +
-                ", number_of_shards='" + number_of_shards + '\'' +
-                ", number_of_replicas='" + number_of_replicas + '\'' +
-                ", uuid='" + uuid + '\'' +
-                ", provided_name='" + provided_name + '\'' +
-                ", version=" + version +
-                '}';
-    }
-}
